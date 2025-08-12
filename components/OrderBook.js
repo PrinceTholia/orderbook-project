@@ -18,8 +18,10 @@ export default function OrderBook({ orderbook }) {
             </div>
             {bids.map(([price, qty], index) => (
               <div key={index} className="grid grid-cols-2 text-sm">
-                <span className="text-green-600">${price.toFixed(2)}</span>
-                <span>{qty.toFixed(4)}</span>
+                <span className="text-green-600">
+                  ${price != null ? price.toFixed(2) : "0.00"}
+                </span>
+                <span>{qty != null ? qty.toFixed(4) : "0.0000"}</span>
               </div>
             ))}
           </div>
@@ -35,8 +37,10 @@ export default function OrderBook({ orderbook }) {
             </div>
             {asks.map(([price, qty], index) => (
               <div key={index} className="grid grid-cols-2 text-sm">
-                <span className="text-red-600">${price.toFixed(2)}</span>
-                <span>{qty.toFixed(4)}</span>
+                <span className="text-red-600">
+                  ${price != null ? price.toFixed(2) : "0.00"}
+                </span>
+                <span>{qty != null ? qty.toFixed(4) : "0.0000"}</span>
               </div>
             ))}
           </div>
@@ -49,6 +53,13 @@ export default function OrderBook({ orderbook }) {
             Last Price:{" "}
             <span className="text-blue-600">${lastPrice.toFixed(2)}</span>
           </span>
+        </div>
+      )}
+
+      {/* Show empty state */}
+      {bids.length === 0 && asks.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          No orders in the book yet. Place an order to get started!
         </div>
       )}
     </div>
