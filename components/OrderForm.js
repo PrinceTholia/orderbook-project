@@ -1,4 +1,3 @@
-// components/OrderForm.js - Enhanced with order types
 import { useState } from "react";
 
 export default function OrderForm({ onSubmitOrder, bestBid, bestAsk }) {
@@ -16,12 +15,19 @@ export default function OrderForm({ onSubmitOrder, bestBid, bestAsk }) {
       return;
     }
 
+    // Validate quantity is whole number
+    const wholeQuantity = Math.floor(parseFloat(quantity));
+    if (wholeQuantity !== parseFloat(quantity)) {
+      alert("Quantity must be a whole number");
+      return;
+    }
+
     setLoading(true);
     try {
       await onSubmitOrder({
         side,
         price: orderType === "market" ? null : parseFloat(price),
-        quantity: parseFloat(quantity),
+        quantity: wholeQuantity, // Use whole number
         type: orderType,
       });
       setPrice("");
@@ -42,142 +48,178 @@ export default function OrderForm({ onSubmitOrder, bestBid, bestAsk }) {
     }
   };
 
+  // Handle quantity input to only allow whole numbers
+  const handleQuantityChange = (e) => {
+    const value = e.target.value;
+    // Only allow digits
+    if (value === "" || /^\d+$/.test(value)) {
+      setQuantity(value);
+    }
+  };
+
+  const spread = bestAsk && bestBid ? bestAsk - bestBid : null;
+
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-2xl font-bold mb-4">Place Order</h2>
+    <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+      <div className="bg-gray-800 px-4 py-3 border-b border-gray-700">
+        <h2 className="text-lg font-bold text-white">Place Order</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Order Type Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Order Type
-          </label>
-          <div className="flex space-x-4">
-            <button
-              type="button"
-              onClick={() => setOrderType("limit")}
-              className={`px-4 py-2 rounded ${
-                orderType === "limit"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700"
-              }`}
-            >
-              Limit
-            </button>
-            <button
-              type="button"
-              onClick={() => setOrderType("market")}
-              className={`px-4 py-2 rounded ${
-                orderType === "market"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-200 text-gray-700"
-              }`}
-            >
-              Market
-            </button>
-          </div>
-        </div>
-
-        {/* Side Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Side
-          </label>
-          <div className="flex space-x-4">
-            <button
-              type="button"
-              onClick={() => setSide("buy")}
-              className={`px-4 py-2 rounded ${
-                side === "buy"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-200 text-gray-700"
-              }`}
-            >
-              Buy {bestAsk && `@ $${bestAsk.toFixed(2)}`}
-            </button>
-            <button
-              type="button"
-              onClick={() => setSide("sell")}
-              className={`px-4 py-2 rounded ${
-                side === "sell"
-                  ? "bg-red-600 text-white"
-                  : "bg-gray-200 text-gray-700"
-              }`}
-            >
-              Sell {bestBid && `@ $${bestBid.toFixed(2)}`}
-            </button>
-          </div>
-        </div>
-
-        {/* Price Input (only for limit orders) */}
-        {orderType === "limit" && (
+        {/* Compact Market Info */}
+        <div className="mt-2 flex justify-between text-xs">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Price ($)
+            <span className="text-gray-400">Bid: </span>
+            <span className="text-green-400 font-mono">
+              {bestBid ? `$${bestBid.toFixed(2)}` : "N/A"}
+            </span>
+          </div>
+          <div>
+            <span className="text-gray-400">Ask: </span>
+            <span className="text-red-400 font-mono">
+              {bestAsk ? `$${bestAsk.toFixed(2)}` : "N/A"}
+            </span>
+          </div>
+          {spread && (
+            <div>
+              <span className="text-gray-400">Spread: </span>
+              <span className="text-yellow-400 font-mono">
+                ${spread.toFixed(2)}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        {/* Compact Type & Side Selection */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-2">
+              Type
+            </label>
+            <div className="grid grid-cols-2 gap-1">
               <button
                 type="button"
-                onClick={fillMarketPrice}
-                className="ml-2 text-xs text-blue-600 hover:text-blue-800"
+                onClick={() => setOrderType("limit")}
+                className={`px-2 py-1.5 rounded text-xs font-medium transition-all ${
+                  orderType === "limit"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                }`}
               >
-                Use Market Price
+                LIMIT
               </button>
+              <button
+                type="button"
+                onClick={() => setOrderType("market")}
+                className={`px-2 py-1.5 rounded text-xs font-medium transition-all ${
+                  orderType === "market"
+                    ? "bg-purple-600 text-white"
+                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                }`}
+              >
+                MARKET
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-2">
+              Side
+            </label>
+            <div className="grid grid-cols-2 gap-1">
+              <button
+                type="button"
+                onClick={() => setSide("buy")}
+                className={`px-2 py-1.5 rounded text-xs font-medium transition-all ${
+                  side === "buy"
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                }`}
+              >
+                🟢 BUY
+              </button>
+              <button
+                type="button"
+                onClick={() => setSide("sell")}
+                className={`px-2 py-1.5 rounded text-xs font-medium transition-all ${
+                  side === "sell"
+                    ? "bg-red-600 text-white"
+                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                }`}
+              >
+                🔴 SELL
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Price & Quantity Inputs */}
+        <div className="grid grid-cols-2 gap-3">
+          {orderType === "limit" && (
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-medium text-gray-300">
+                  Price ($)
+                </label>
+                <button
+                  type="button"
+                  onClick={fillMarketPrice}
+                  className="text-xs text-blue-400 hover:text-blue-300"
+                >
+                  Market
+                </button>
+              </div>
+              <input
+                type="number"
+                step="0.01"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white font-mono text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="0.00"
+                required
+              />
+            </div>
+          )}
+
+          <div className={orderType === "market" ? "col-span-2" : ""}>
+            <label className="block text-xs font-medium text-gray-300 mb-1">
+              Quantity
             </label>
             <input
               type="number"
-              step="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="0.00"
+              step="1"
+              min="1"
+              value={quantity}
+              onChange={handleQuantityChange}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white font-mono text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="1"
               required
             />
+            {quantity && parseFloat(quantity) % 1 !== 0 && (
+              <div className="text-red-400 text-xs mt-1">
+                ⚠️ Quantity must be a whole number
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Quantity Input */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Quantity
-          </label>
-          <input
-            type="number"
-            step="0.0001"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="0.0000"
-            required
-          />
         </div>
-
-        {/* Market Order Warning */}
-        {orderType === "market" && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-            <p className="text-sm text-yellow-800">
-              <strong>Warning:</strong> Market orders execute immediately at the
-              best available price.
-              {side === "buy" &&
-                bestAsk &&
-                ` Current best ask: $${bestAsk.toFixed(2)}`}
-              {side === "sell" &&
-                bestBid &&
-                ` Current best bid: $${bestBid.toFixed(2)}`}
-            </p>
-          </div>
-        )}
 
         <button
           type="submit"
-          disabled={loading || !quantity || (orderType === "limit" && !price)}
-          className={`w-full py-2 px-4 rounded-md font-medium ${
+          disabled={
+            loading ||
+            !quantity ||
+            (orderType === "limit" && !price) ||
+            (quantity && parseFloat(quantity) % 1 !== 0)
+          }
+          className={`w-full py-3 px-4 rounded font-bold text-sm transition-all ${
             side === "buy"
-              ? "bg-green-600 hover:bg-green-700 text-white"
-              : "bg-red-600 hover:bg-red-700 text-white"
+              ? "bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white"
+              : "bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white"
           } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {loading
-            ? "Placing Order..."
-            : `Place ${orderType.toUpperCase()} ${side.toUpperCase()} Order`}
+            ? "Processing..."
+            : `${orderType.toUpperCase()} ${side.toUpperCase()}`}
         </button>
       </form>
     </div>
