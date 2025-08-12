@@ -23,44 +23,57 @@ export default function PriceChart({ trades, lastPrice }) {
   });
 
   useEffect(() => {
-    if (trades && trades.length > 0) {
-      const last30Trades = trades.slice(-30);
-      const processedData = last30Trades.map((trade, index) => ({
-        time: new Date(trade.timestamp).toLocaleTimeString("en-US", {
-          hour12: false,
-          minute: "2-digit",
-          second: "2-digit",
-        }),
-        price: trade.price,
-        volume: trade.quantity,
-        timestamp: trade.timestamp,
-      }));
-
-      setChartData(processedData);
-
-      // Calculate metrics
-      const prices = processedData.map((d) => d.price);
-      const volumes = processedData.map((d) => d.volume);
-
-      if (prices.length > 0) {
-        const high = Math.max(...prices);
-        const low = Math.min(...prices);
-        const open = prices[0];
-        const close = lastPrice || prices[prices.length - 1];
-
-        const gap = ((close - open) / open) * 100;
-
-        // Simple volatility (standard deviation)
-        const mean = prices.reduce((a, b) => a + b, 0) / prices.length;
-        const variance =
-          prices.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / prices.length;
-        const volatility = Math.sqrt(variance);
-        const totalVolume = volumes.reduce((a, b) => a + b, 0);
-
-        setMetrics({ high, low, open, gap, volatility, volume: totalVolume });
-      }
+    // Check if trades array is empty or undefined
+    if (!trades || trades.length === 0) {
+      // Clear chart data and reset metrics when no trades
+      setChartData([]);
+      setMetrics({
+        high: 0,
+        low: 0,
+        open: 0,
+        gap: 0,
+        volatility: 0,
+        volume: 0,
+      });
+      return;
     }
-  }, [trades, lastPrice]);
+
+    const last30Trades = trades.slice(-30);
+    const processedData = last30Trades.map((trade, index) => ({
+      time: new Date(trade.timestamp).toLocaleTimeString("en-US", {
+        hour12: false,
+        minute: "2-digit",
+        second: "2-digit",
+      }),
+      price: trade.price,
+      volume: trade.quantity,
+      timestamp: trade.timestamp,
+    }));
+
+    setChartData(processedData);
+
+    // Calculate metrics
+    const prices = processedData.map((d) => d.price);
+    const volumes = processedData.map((d) => d.volume);
+
+    if (prices.length > 0) {
+      const high = Math.max(...prices);
+      const low = Math.min(...prices);
+      const open = prices[0];
+      const close = lastPrice || prices[prices.length - 1];
+
+      const gap = ((close - open) / open) * 100;
+
+      // Simple volatility (standard deviation)
+      const mean = prices.reduce((a, b) => a + b, 0) / prices.length;
+      const variance =
+        prices.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / prices.length;
+      const volatility = Math.sqrt(variance);
+      const totalVolume = volumes.reduce((a, b) => a + b, 0);
+
+      setMetrics({ high, low, open, gap, volatility, volume: totalVolume });
+    }
+  }, [trades, lastPrice]); // Add dependency on trades and lastPrice
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -72,7 +85,7 @@ export default function PriceChart({ trades, lastPrice }) {
             {`Price: $${data.price.toFixed(2)}`}
           </p>
           <p className="text-blue-400 text-sm">
-            {`Volume: ${data.volume.toFixed(4)}`}
+            {`Volume: ${data.volume.toFixed(0)}`}
           </p>
         </div>
       );
@@ -86,8 +99,20 @@ export default function PriceChart({ trades, lastPrice }) {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-bold text-white">Live Price Chart</h2>
         <div className="flex items-center space-x-2 text-sm">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-green-400">Live</span>
+          <div
+            className={`w-2 h-2 rounded-full ${
+              chartData.length > 0
+                ? "bg-green-500 animate-pulse"
+                : "bg-gray-500"
+            }`}
+          ></div>
+          <span
+            className={
+              chartData.length > 0 ? "text-green-400" : "text-gray-400"
+            }
+          >
+            {chartData.length > 0 ? "Live" : "No Data"}
+          </span>
         </div>
       </div>
 
@@ -186,7 +211,12 @@ export default function PriceChart({ trades, lastPrice }) {
           <div className="flex items-center justify-center h-full text-gray-500">
             <div className="text-center">
               <div className="text-3xl mb-2">📈</div>
-              <div className="text-sm">No price data available</div>
+              <div className="text-sm">
+                Chart cleared - No price data available
+              </div>
+              <div className="text-xs text-gray-600 mt-1">
+                Place trades to see live chart
+              </div>
             </div>
           </div>
         )}
